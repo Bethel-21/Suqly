@@ -1,11 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -17,54 +11,119 @@ enum Role {
   CUSTOMER
 }
 
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
 model User {
-  id            Int      @id @default(autoincrement())
-  phone         String
+  id            Int            @id @default(autoincrement())
+  phone         String         @unique
   password      String
   name          String
   role          Role
   business      Business?
-  createdAt     DateTime @default(now())
+  carts         Cart[]
+  orders        Order[]
+  notifications Notification[]
+  createdAt     DateTime       @default(now())
 }
 
 model Business {
-  id            Int       @id @default(autoincrement())
-  name          String
-  address       String
-  logo          String
-  motto         String
-  description   String
-  phone         String
+  id          Int        @id @default(autoincrement())
+  name        String
+  address     String
+  logo        String
+  motto       String
+  description String
+  phone       String
+  ownerId     Int        @unique
+  owner       User       @relation(fields: [ownerId], references: [id])
   categories  Category[]
-  ownerId     Int      @unique
-  owner       User     @relation(fields: [ownerId], references: [id])
-  createdAt   DateTime @default(now())
   products    Product[]
+  carts       Cart[]
+  orders      Order[]
+  createdAt   DateTime   @default(now())
 }
 
 model Category {
-  id            Int       @id @default(autoincrement())
-  name          String
-  businessId  Int
-  business    Business @relation(fields: [businessId], references: [id])
-  products    Product[]
-  createdAt   DateTime @default(now())
+  id         Int      @id @default(autoincrement())
+  name       String
+  businessId Int
+  business   Business @relation(fields: [businessId], references: [id])
+  products   Product[]
+  createdAt  DateTime @default(now())
 }
 
 model Product {
-  id            Int       @id @default(autoincrement())
-  name          String
-  description   String
-  image         String
-  price         Decimal
-  stock         Int       @default(0)
-  published     Boolean   @default(false)
-  businessId    Int
-  business      Business @relation(fields: [businessId], references: [id])
-  categoryId    Int
-  category      Category @relation(fields: [categoryId], references: [id])  
-  createdAt   DateTime @default(now())
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String
+  image       String
+  price       Decimal
+  stock       Int         @default(0)
+  published   Boolean     @default(false)
+  businessId  Int
+  business    Business    @relation(fields: [businessId], references: [id])
+  categoryId  Int
+  category    Category    @relation(fields: [categoryId], references: [id])
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
 }
 
+model Cart {
+  id         Int        @id @default(autoincrement())
+  customerId Int
+  customer   User       @relation(fields: [customerId], references: [id])
+  businessId Int
+  business   Business   @relation(fields: [businessId], references: [id])
+  items      CartItem[]
+  createdAt  DateTime   @default(now())
 
+  @@unique([customerId, businessId])
+}
 
+model CartItem {
+  id        Int     @id @default(autoincrement())
+  cartId    Int
+  cart      Cart    @relation(fields: [cartId], references: [id])
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+
+  @@unique([cartId, productId])
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  customerId Int
+  customer   User        @relation(fields: [customerId], references: [id])
+  businessId Int
+  business   Business    @relation(fields: [businessId], references: [id])
+  status     OrderStatus @default(PENDING)
+  items      OrderItem[]
+  createdAt  DateTime    @default(now())
+}
+
+model OrderItem {
+  id              Int      @id @default(autoincrement())
+  orderId         Int
+  order           Order    @relation(fields: [orderId], references: [id])
+  productId       Int
+  product         Product  @relation(fields: [productId], references: [id])
+  quantity        Int
+  priceAtPurchase Decimal
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
