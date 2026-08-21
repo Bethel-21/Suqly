@@ -27,3 +27,6 @@ npm-debug.log*
 EOF.agents/
 .claude/
 .windsurf/
+backend/.agents/
+backend/.claude/
+backend/.windsurf/
